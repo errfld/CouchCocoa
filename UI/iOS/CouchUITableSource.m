@@ -58,13 +58,16 @@
 }
 
 -(void)setFilterPredicate:(NSPredicate *)filterPredicate {
-    if (filterPredicate != _predicate) {
+    if (!filterPredicate) {
+        [_predicate autorelease];
+        _predicate = nil;
+    } else if (filterPredicate != _predicate) {
         [_predicate autorelease];
         _predicate = [filterPredicate retain];
         _filteredRows = [_rows mutableCopy];
         [_filteredRows filterUsingPredicate:_predicate];
-        [self.tableView reloadData];
     }
+    [self.tableView reloadData];
 }
 
 -(NSArray *)rows {
