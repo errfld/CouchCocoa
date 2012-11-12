@@ -16,8 +16,10 @@
     UITableView* _tableView;
     CouchLiveQuery* _query;
 	NSMutableArray* _rows;
+    NSMutableArray* _filteredRows;
     NSString* _labelProperty;
     BOOL _deletionAllowed;
+    NSPredicate *_predicate;
 }
 @end
 
@@ -36,6 +38,8 @@
 
 - (void)dealloc {
     [_rows release];
+    [_filteredRows release];
+    [_predicate release];
     [_query removeObserver: self forKeyPath: @"rows"];
     [_query release];
     [super dealloc];
@@ -47,8 +51,28 @@
 
 
 @synthesize tableView=_tableView;
-@synthesize rows=_rows;
+//@synthesize rows=_rows;
 
+-(NSPredicate *)filterPredicate {
+    return _predicate;
+}
+
+-(void)setFilterPredicate:(NSPredicate *)filterPredicate {
+    if (filterPredicate != _predicate) {
+        [_predicate autorelease];
+        _predicate = [filterPredicate retain];
+        _filteredRows = [_rows mutableCopy];
+        [_filteredRows filterUsingPredicate:_predicate];
+        [self.tableView reloadData];
+    }
+}
+
+-(NSArray *)rows {
+    if (_predicate) {
+        return _filteredRows;
+    }
+    return _rows;
+}
 
 - (CouchQueryRow*) rowAtIndex: (NSUInteger)index {
     return [_rows objectAtIndex: index];
@@ -58,7 +82,7 @@
 - (NSIndexPath*) indexPathForDocument: (CouchDocument*)document {
     NSString* documentID = document.documentID;
     NSUInteger index = 0;
-    for (CouchQueryRow* row in _rows) {
+    for (CouchQueryRow* row in self.rows) {
         if ([row.documentID isEqualToString: documentID])
             return [NSIndexPath indexPathForRow: index inSection: 0];
         ++index;
@@ -69,7 +93,7 @@
 
 - (CouchDocument*) documentAtIndexPath: (NSIndexPath*)path {
     if (path.section == 0)
-        return [[_rows objectAtIndex: path.row] document];
+        return [[self.rows objectAtIndex: path.row] document];
     return nil;
 }
 
@@ -107,6 +131,10 @@
         NSArray *oldRows = [_rows retain];
         [_rows release];
         _rows = [rowEnum.allObjects mutableCopy];
+        if (_predicate) {
+            _filteredRows = [_rows mutableCopy];
+            [_filteredRows filterUsingPredicate:_predicate];
+        }
         [self tellDelegate: @selector(couchTableSource:willUpdateFromQuery:) withObject: _query];
         
         id delegate = _tableView.delegate;
@@ -153,7 +181,7 @@
 
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return _rows.count;
+    return self.rows.count;
 }
 
 
@@ -191,7 +219,7 @@
 
 
 - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
-    return _deletionAllowed;
+    return _deletionAllowed && _predicate == nil;
 }
 
 
