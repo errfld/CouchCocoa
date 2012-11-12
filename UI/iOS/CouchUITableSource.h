@@ -36,6 +36,10 @@
 
 #pragma mark Filtering Tablerows:
 
+/** Using a predicate to filter rows property 
+    If filterPredicate is set to nil the unfilterd content is returned by the row accessors.
+    Otherwise a filtered version of the cached rows property is used 
+    Caution: Method invocation will cause update on TableView */
 @property (nonatomic,retain) NSPredicate *filterPredicate;
 
 #pragma mark Displaying The Table:

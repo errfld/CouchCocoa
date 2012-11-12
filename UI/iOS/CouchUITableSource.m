@@ -51,7 +51,6 @@
 
 
 @synthesize tableView=_tableView;
-//@synthesize rows=_rows;
 
 -(NSPredicate *)filterPredicate {
     return _predicate;
@@ -61,6 +60,7 @@
     if (!filterPredicate) {
         [_predicate autorelease];
         _predicate = nil;
+        _filteredRows = [NSMutableArray array];
     } else if (filterPredicate != _predicate) {
         [_predicate autorelease];
         _predicate = [filterPredicate retain];
@@ -78,7 +78,7 @@
 }
 
 - (CouchQueryRow*) rowAtIndex: (NSUInteger)index {
-    return [_rows objectAtIndex: index];
+    return [self.rows objectAtIndex: index];
 }
 
 
