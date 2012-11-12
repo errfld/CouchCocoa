@@ -34,6 +34,9 @@
 /** Convenience accessor to return the document at a given index path. */
 - (CouchDocument*) documentAtIndexPath: (NSIndexPath*)path;
 
+#pragma mark Filtering Tablerows:
+
+@property (nonatomic,retain) NSPredicate *filterPredicate;
 
 #pragma mark Displaying The Table:
 
