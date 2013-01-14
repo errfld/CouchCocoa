@@ -60,7 +60,7 @@
     if (!filterPredicate) {
         [_predicate autorelease];
         _predicate = nil;
-        _filteredRows = [NSMutableArray array];
+        _filteredRows = [[NSMutableArray array] retain];
     } else if (filterPredicate != _predicate) {
         [_predicate autorelease];
         _predicate = [filterPredicate retain];
