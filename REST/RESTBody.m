@@ -267,7 +267,7 @@ static Class sJSONSerialization;
         return [obj JSONData];
 #endif
     return [sJSONSerialization dataWithJSONObject: obj 
-                                          options: NSJSONReadingAllowFragments
+                                          options: (1UL << 2)
                                             error: NULL];
 }
 
@@ -277,7 +277,7 @@ static Class sJSONSerialization;
         return [obj JSONString];
 #endif
     NSData* data = [sJSONSerialization dataWithJSONObject: obj                                               
-                                                  options: NSJSONReadingAllowFragments
+                                                  options:(1UL << 2)
                                                     error: NULL];
     if (!data)
         return nil;
