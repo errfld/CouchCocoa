@@ -130,6 +130,26 @@ NSString* const kCouchDocumentChangeNotification = @"CouchDocumentChange";
 }
 
 
+- (void) refresh {
+    if (!_currentRevision) {
+        [_currentRevisionID release];
+        _currentRevisionID = nil;
+        return;
+    }
+
+    NSString* eTag = [NSString stringWithFormat: @"\"%@\"", _currentRevisionID];
+    RESTOperation* op = [self sendHTTP: @"GET" parameters: @{@"If-None-Match": eTag}];
+    if (op.httpStatus == 304)   // this blocks
+        return;
+
+    // We got a different revision, so make it the current one:
+    [_currentRevision autorelease];
+    _currentRevision = [[CouchRevision alloc] initWithOperation: op];
+    [_currentRevisionID autorelease];
+    _currentRevisionID = [_currentRevision.revisionID copy];
+}
+
+
 - (NSArray*) getRevisionHistory {
     RESTOperation* op = [self sendHTTP: @"GET" 
                             parameters: [NSDictionary dictionaryWithObjectsAndKeys:
@@ -268,8 +288,8 @@ NSString* const kCouchDocumentChangeNotification = @"CouchDocumentChange";
             parameters: (NSDictionary*)parameters
 {
     RESTOperation* op = [super PUT: body parameters: parameters];
-    if (op.isPOST)
-        [self.database beginDocumentOperation: self];   // I'm being created via a POST
+    if (op.isPOST)                                          // I'm being created via a POST
+        [self.database beginDocumentOperation: self];       // balanced in -createdByPOST:
     return op;
 }
 
@@ -320,7 +340,7 @@ NSString* const kCouchDocumentChangeNotification = @"CouchDocumentChange";
 - (RESTOperation*) sendRequest: (NSURLRequest*)request {
     RESTOperation* op = [super sendRequest: request];
     if (!op.isReadOnly)
-        [self.database beginDocumentOperation: self];
+        [self.database beginDocumentOperation: self];       // balanced in -operationDidComplete:
     return op;
 }
 
@@ -363,11 +383,15 @@ NSString* const kCouchDocumentChangeNotification = @"CouchDocumentChange";
         if ([[op.responseBody.fromJSON objectForKey: @"reason"] isEqualToString: @"deleted"])
             self.isDeleted = YES;
     }
-    
-    if (!op.isReadOnly)
-        [self.database endDocumentOperation: self];
 
     return error;
+}
+
+
+- (void) operationDidComplete: (RESTOperation*)op {
+    [super operationDidComplete: op];
+    if (op.resource == self && !op.isReadOnly)
+        [self.database endDocumentOperation: self];
 }
 
 
